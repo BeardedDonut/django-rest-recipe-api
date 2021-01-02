@@ -7,6 +7,7 @@ from rest_framework import status
 
 CREATE_USER_URL = reverse('users:create')
 TOKEN_URL = reverse('users:token')
+SELF_URL = reverse('users:self')
 
 
 def create_user(**params):
@@ -116,3 +117,55 @@ class PublicUserAPITests(TestCase):
 
         self.assertNotIn('token', response.data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_retrieve_user_unauthorized(self):
+        """Test that authentication is required for users"""
+        response = self.client.get(SELF_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateUserApiTests(TestCase):
+    """Test APIs that require authentications"""
+
+    def setUp(self):
+        self.user = create_user(
+            email='test@test.com',
+            password='some_random_pass',
+            name='test_name'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_retrive_profiel_success(self):
+        """Test retrieving profile for authenticated user"""
+        response = self.client.get(SELF_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {
+            'name': self.user.name,
+            'email': self.user.email}
+        )
+
+    def test_post_self_url_not_allowed(self):
+        """Test that POST requests are not allowed on SELF url"""
+        response = self.client.post(SELF_URL, {})
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED
+            )
+
+    def test_update_user_profile(self):
+        """Test updating user profile for authenticated user"""
+        params = {
+            'name': 'new_test_name',
+            'password': 'new_random_password',
+        }
+
+        response = self.client.patch(SELF_URL, params)
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.name, params['name'])
+        self.assertTrue(self.user.check_password(params['password']))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
