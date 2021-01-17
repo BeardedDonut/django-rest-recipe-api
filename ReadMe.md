@@ -7,7 +7,7 @@ This is a sample project (and a boilderplate repo for future check branch `Boile
 
 
 ### TODO:
-  - Implement recipe image upload feature
+    - Add filter feature where you can filter `Recipes` based on `Tags` and `Ingredients`
 
 
 
