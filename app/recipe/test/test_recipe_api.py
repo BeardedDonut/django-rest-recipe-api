@@ -171,3 +171,54 @@ class PrivateRecipeApiTest(TestCase):
         self.assertEqual(ingredients.count(), 2)
         self.assertIn(ing1, ingredients)
         self.assertIn(ing2, ingredients)
+
+    def test_partial_update_recipe(self):
+        """Test updating a recipe with PATCH"""
+        # create a sample recipe
+        recipe = sample_recipe(user=self.user)
+        recipe.tags.add(sample_tag(user=self.user, name='Desert'))
+
+        # create fields that should be updated
+        new_tag = sample_tag(user=self.user, name='Main Course')
+        params = {
+            'title': 'Pizza',
+            'tags': [new_tag.id]
+        }
+
+        # get recipe specific url
+        url = detail_url(recipe.id)
+
+        # make the API call
+        self.client.patch(url, params)
+
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.title, params['title'])
+        self.assertIn(new_tag, recipe.tags.all())
+        self.assertEqual(len(recipe.tags.all()), 1)
+
+    def test_full_update_recipe(self):
+        """Test updating a recipe with PUT"""
+        recipe = sample_recipe(user=self.user)
+        recipe.tags.add(sample_tag(user=self.user, name='Desert'))
+
+        new_tag1 = sample_tag(user=self.user, name='Main Course')
+        new_tag2 = sample_tag(user=self.user, name='Pizza')
+        new_ing1 = sample_ingredient(user=self.user, name='Salt')
+        new_ing2 = sample_ingredient(user=self.user, name='Pepperoni')
+        params = {
+            'title': 'Pepperoni Pizza',
+            'time_minutes': 33,
+            'tags': [new_tag1.id, new_tag2.id],
+            'ingredients': [new_ing1.id, new_ing2.id],
+            'price': 15.00
+        }
+
+        url = detail_url(recipe.id)
+        self.client.put(url, params)
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.time_minutes, params['time_minutes'])
+        self.assertEqual(recipe.price, params['price'])
+        self.assertEqual(recipe.title, params['title'])
+
+        self.assertEqual(len(recipe.tags.all()), 2)
+        self.assertEqual(len(recipe.ingredients.all()), 2)
