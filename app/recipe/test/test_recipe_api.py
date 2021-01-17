@@ -119,3 +119,55 @@ class PrivateRecipeApiTest(TestCase):
         # run the assertions
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
+
+    def test_create_basic_recipe(self):
+        """Test creating a basic (Without Tags) Recipe object"""
+        params = {
+            'title': 'Red Velvet Cake',
+            'time_minutes': 30,
+            'price': 10.00
+        }
+        response = self.client.post(RECIPE_URL, params)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        recipe = Recipe.objects.get(id=response.data['id'])
+        for key in params.keys():
+            self.assertEqual(params[key], getattr(recipe, key))
+
+    def test_create_recipe_with_tags(self):
+        """Test creating a recipe with tags"""
+        tag1 = sample_tag(user=self.user, name='Vegan')
+        tag2 = sample_tag(user=self.user, name='Desert')
+        params = {
+            'title': 'Avocade Lime Cheesecake',
+            'tags': [tag1.id, tag2.id],
+            'time_minutes': 100,
+            'price': 35.00
+        }
+        response = self.client.post(RECIPE_URL, params)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        recipe = Recipe.objects.get(id=response.data['id'])
+        tags = recipe.tags.all()
+        self.assertEqual(tags.count(), 2)
+        self.assertIn(tag1, tags)
+        self.assertIn(tag2, tags)
+
+    def test_create_recipe_with_ingredients(self):
+        """Test creating a recipe with ingredients"""
+        ing1 = sample_ingredient(user=self.user, name='Red Pepper')
+        ing2 = sample_ingredient(user=self.user, name='Salt')
+        params = {
+            'title': 'Steak',
+            'ingredients': [ing1.id, ing2.id],
+            'time_minutes': 50,
+            'price': 15.00
+        }
+        response = self.client.post(RECIPE_URL, params)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        recipe = Recipe.objects.get(id=response.data['id'])
+        ingredients = recipe.ingredients.all()
+        self.assertEqual(ingredients.count(), 2)
+        self.assertIn(ing1, ingredients)
+        self.assertIn(ing2, ingredients)
