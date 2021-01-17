@@ -7,7 +7,6 @@ This is a sample project (and a boilderplate repo for future check branch `Boile
 
 
 ### TODO:
-  - Add recipe endpoints
   - Implement recipe image upload feature
 
 
